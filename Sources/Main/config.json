@@ -1,0 +1,23 @@
+{
+    "vcap":{
+        "services":{
+            "Object-Storage": [
+               {
+                   "name": "PlanGenerator-Object-Storage",
+                   "label": "Object-Storage",
+                   "credentials": {
+                       "auth_url": "https://identity.open.softlayer.com",
+                       "project": "object_storage_6d184cce_9ac6_43bd_a049_9c066983ade6",
+                       "projectId": "07224055156344ee867c3f76ffd6248b",
+                       "region": "dallas",
+                       "userId": "50dc4e9a6e6342afaf0b46eeda4bc978",
+                       "username": "admin_6c4e892c5db2839d3d5eeb2efe0201e2c3b7f460",
+                       "password": "b-ZU7^h/Lxp?85.v",
+                       "domainId": "3af5375de81e491288510521c7c0da49",
+                       "domainName": "1075761"
+                   }
+               }
+            ]
+        }
+    }
+}
