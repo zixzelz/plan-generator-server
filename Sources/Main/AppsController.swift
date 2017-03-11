@@ -17,6 +17,7 @@ import CouchDB
 enum AppsControllerError: Error {
     case retrieveContainerError(Error)
     case storeObjectError(Error)
+    case fetchObjectError(Error)
 }
 
 extension AppsControllerError {
@@ -27,11 +28,14 @@ extension AppsControllerError {
             return "retrieveContainerError: \(error.localizedDescription)"
         case .storeObjectError(let error):
             return "storeObjectError: \(error.localizedDescription)"
+        case .fetchObjectError(let error):
+            return "fetchObjectError: \(error.localizedDescription)"
         }
     }
 }
 
 typealias AppsControllerCompletionHandlet = (MainResult<Void, AppsControllerError>) -> Void
+typealias GetAppControllerCompletionHandlet = (MainResult<Data, AppsControllerError>) -> Void
 
 class AppsController {
 
@@ -42,7 +46,7 @@ class AppsController {
     private let DefaultName = "build.ipa"
 
     init(configMgr: ConfigurationManager) {
-        
+
         // Get database connection details...
         let cloudantServ: Service? = configMgr.getServices(type: "cloudantNoSQLDB").first
         dbMgr = DatabaseManager(dbName: dbName, cloudantServ: cloudantServ)
@@ -69,26 +73,59 @@ class AppsController {
         }
     }
 
+    func app(name: String, completion: @escaping GetAppControllerCompletionHandlet) {
+
+        objstorage?.retrieveContainer(name: "apps") { (error, container) in
+
+            guard let container = container else {
+                Log.error("[AppsController] ❌ retrieveContainer error :: \(error)")
+
+                let error: Error = error ?? AppsController.defaultError()
+                completion(.failure(.retrieveContainerError(error)))
+                return
+            }
+
+            container.retrieveObject(name: name) { (error, object) in
+                
+                guard let object = object else {
+                    Log.error("[AppsController] ❌ retrieveObject error :: \(error)")
+                    
+                    let error: Error = error ?? AppsController.defaultError()
+                    completion(.failure(.fetchObjectError(error)))
+                    return
+                }
+                completion(.success(object.data!))
+            }
+        }
+
+    }
+
     fileprivate func storeApp(_ appBinary: Data, name: String, completion: @escaping AppsControllerCompletionHandlet) {
 
         objstorage?.retrieveContainer(name: "apps") { (error, container) in
-            if let error = error {
+
+            guard let container = container else {
                 Log.error("[AppsController] ❌ retrieveContainer error :: \(error)")
 
+                let error: Error = error ?? AppsController.defaultError()
                 completion(.failure(.retrieveContainerError(error)))
-            } else {
+                return
+            }
 
-                container?.storeObject(name: name, data: appBinary) { (error, object) in
-                    if let error = error {
-                        Log.error("[AppsController] ❌ storeObject error :: \(error)")
-                        completion(.failure(.storeObjectError(error)))
-                    } else {
-                        completion(.success())
-                    }
+            container.storeObject(name: name, data: appBinary) { (error, object) in
+                if let error = error {
+                    Log.error("[AppsController] ❌ storeObject error :: \(error)")
+                    completion(.failure(.storeObjectError(error)))
+                } else {
+                    completion(.success())
                 }
             }
         }
 
+    }
+
+    static fileprivate func defaultError() -> NSError {
+        return NSError(domain: "AppsController", code: 0, userInfo: nil)
     }
 
     /**
@@ -112,7 +149,7 @@ class AppsController {
 //            next()
 //            return
 //        }
-//        
+//
 //        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
 //            guard let db = db else {
 //                Log.error(">> No database.")
@@ -120,14 +157,14 @@ class AppsController {
 //                next()
 //                return
 //            }
-//            
+//
 //            db.retrieveAll(includeDocuments: true) { docs, error in
 //                guard let docs = docs else {
 //                    Log.error(">> Could not read from database or none exists.")
 //                    response.status(.badRequest).send("Error could not read from database or none exists")
 //                    return
 //                }
-//                
+//
 //                Log.info(">> Successfully retrived all docs from db.")
 //                let names = docs["rows"].map { _, row in
 //                    return row["doc"]["name"].string ?? ""
@@ -137,7 +174,7 @@ class AppsController {
 //            }
 //        }
 //    }
-//    
+//
 //    /**
 //     * Creates a new Visitor.
 //     *
@@ -157,17 +194,17 @@ class AppsController {
 //            try response.status(.badRequest).send("JSON payload not provided!").end()
 //            return
 //        }
-//        
+//
 //        let name = jsonPayload["name"].string ?? ""
 //        //let json: [String: Any] = [ "name": name ]
-//        
+//
 //        guard let dbMgr = self.dbMgr else {
 //            Log.warning(">> No database manager.")
 //            response.status(.OK).send("Hello \(name)!")
 //            next()
 //            return
 //        }
-//        
+//
 //        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
 //            guard let db = db else {
 //                Log.error(">> No database.")
@@ -175,7 +212,7 @@ class AppsController {
 //                next()
 //                return
 //            }
-//            
+//
 //            db.create(jsonPayload, callback: { (id: String?, rev: String?, document: JSON?, error: NSError?) in
 //                if let _ = error {
 //                    Log.error(">> Could not persist document to database.")

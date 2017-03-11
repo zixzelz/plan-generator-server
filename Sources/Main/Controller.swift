@@ -48,8 +48,17 @@ public class Controller {
     }
 
     public func getApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-        response.status(.OK).send("OK")
-        next()
+        
+        appController.app(name: "build.ipa") { (result) in
+            
+            switch result {
+            case .success(let data):
+                response.status(.OK).send(data: data)
+                next()
+            case .failure(let error):
+                try? response.status(.internalServerError).send(json: JSON(["message": error.description])).end()
+            }
+        }        
     }
     
     public func addApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
