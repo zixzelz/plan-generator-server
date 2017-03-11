@@ -55,8 +55,7 @@ public class Controller {
     public func addApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
 
         guard let appBinary = getAppBinary(fromRequest: request) else {
-            response.status(.badRequest).send("error!")
-            next()
+            try? response.status(.badRequest).send("error!").end()
             return
         }
 
@@ -64,16 +63,14 @@ public class Controller {
 
             switch result {
             case .success():
-                response.status(.OK)
+                response.status(.OK).send(json: JSON([]))
                 next()
             case .failure(let error):
-                response.status(.badRequest).send(error.description)
-                next()
+                try? response.status(.internalServerError).send(json: JSON(["message": error.description])).end()
             }
         }
 
     }
-
 
     func showFolder(fileManager: FileManager, packagePath: String) {
         do {

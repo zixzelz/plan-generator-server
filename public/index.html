@@ -15,12 +15,23 @@
 <body>
     <div class="container">
         <h1>Welcome.</h1>
-        <div id="nameInput" class="input-group-lg center-block helloInput">
-            <p class="lead">Submit build</p>
-            <input type="file" multiple="multiple" accept=".pdf">
-            <a href="#" class="submit button">Загрузить файлы</a>
-            <div class="ajax-respond"></div>
+		<div class="center-block containerInput">
+			
+            <div id="buildInput" class="input-group-lg helloInput">
+                <p class="lead">Submit build</p>
+                <input type="file" multiple="multiple" accept=".pdf"></input>
+                <div class="ajax-respond"></div>
+                
+                <a href="#" class="submit button">Загрузить файлы</a>
+            </div>
 
+            <div id="progressContainer" style="display: none;">
+                <progress id="progressbar" value="0" max="100" ></progress>
+			</div>
+			
+			<p/>
+			<p id="errorMessage"></p>
+			
         </div>
         <p id="response" class="lead text-center"></p>
 
@@ -47,6 +58,12 @@
         // Вешаем функцию ан событие click и отправляем AJAX запрос с данными файлов
         
         $('.submit.button').click(function( event ){
+                                  
+            $('#buildInput').hide();
+            $('#progressContainer').show();
+			var progressBar = $('#progressbar');
+			var errorMessage = $('#errorMessage');
+
             event.stopPropagation(); // Остановка происходящего
             event.preventDefault();  // Полная остановка происходящего
 
@@ -60,33 +77,60 @@
             // Отправляем запрос
 
             $.ajax({
-                url: "./api/apps",
-                type: "POST",
-                data: data,
-                cache: false,
-                dataType: "json",
-                processData: false, // Не обрабатываем файлы (Don't process the files)
-                   contentType: false,
-                success: function( respond, textStatus, jqXHR ){
-
-                    // Если все ОК
-
-                    if( typeof respond.error === 'undefined' ) {
-                        // Файлы успешно загружены, делаем что нибудь здесь
-
-                        // выведем пути к загруженным файлам в блок '.ajax-respond'
-
-                        var files_path = respond.files;
-                        var html = '';
-                        $.each( files_path, function( key, val ){ html += val +'<br>'; } )
-                        $('.ajax-respond').html( html );
-                    } else {
-                        console.log('ОШИБКИ ОТВЕТА сервера: ' + respond.error );
-                    }
+				url: "./api/apps",
+				type: "POST",
+				data: data,
+				cache: false,
+				dataType: "json",
+				processData: false, // Не обрабатываем файлы (Don't process the files)
+				contentType: false,
+				xhr: function(){
+					var xhr = $.ajaxSettings.xhr(); // получаем объект XMLHttpRequest
+					xhr.upload.addEventListener('progress', function(evt) { // добавляем обработчик события progress (onprogress)
+						
+						if(evt.lengthComputable) { // если известно количество байт
+							console.log("evt.lengthComputableера: " + evt.lengthComputable );
+							
+							// высчитываем процент загруженного
+							var percentComplete = Math.ceil(evt.loaded / evt.total * 100);
+							console.log("percentComplete: " + percentComplete );
+							
+							// устанавливаем значение в атрибут value тега <progress>
+							// и это же значение альтернативным текстом для браузеров, не поддерживающих <progress>
+							progressBar.val(percentComplete).text('Загружено ' + percentComplete + '%');
+						}
+					}, false);
+				   
+				   return xhr;
                 },
-                error: function( jqXHR, textStatus, errorThrown ){
-                   console.log('ОШИБКИ AJAX запроса: ' + textStatus );
-                }
+				success: function( respond, textStatus, jqXHR ) {
+				   
+				   $('#progressContainer').hide();
+				   errorMessage.hide();
+
+					// Если все ОК
+
+					if( typeof respond.error === 'undefined' ) {
+						// Файлы успешно загружены, делаем что нибудь здесь
+
+						// выведем пути к загруженным файлам в блок '.ajax-respond'
+
+						var files_path = respond.files;
+						var html = '';
+						$.each( files_path, function( key, val ){ html += val +'<br>'; } )
+						$('.ajax-respond').html( html );
+					} else {
+						console.log('ОШИБКИ ОТВЕТА сервера: ' + respond.error );
+					}
+				},
+				error: function( jqXHR, textStatus, errorThrown ) {
+				   $('#buildInput').show();
+				   $('#progressContainer').hide();
+				   
+				   var lson = JSON.parse(jqXHR.responseText);
+				   errorMessage.html(lson.message);
+				   errorMessage.show();
+				}
             });
 
         });
@@ -95,7 +139,7 @@
         $('#user_name').keydown(function(e) {
         	var name = $('#user_name').val();
             if (e.which == 13 && name.length > 0) { //catch Enter key
-                $('#nameInput').hide();
+                $('#buildInput').hide();
            		$('#response').html("loading...");
             	//POST request to API to create a new visitor entry in the database
                 $.ajax({
@@ -106,7 +150,7 @@
         				})
               .done(function(data) {
                   $('#response').html(data);
-                  $('#nameInput').hide();
+                  $('#buildInput').hide();
                     getNames();
               });
             }
