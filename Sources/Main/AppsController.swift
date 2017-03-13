@@ -18,6 +18,7 @@ enum AppsControllerError: Error {
     case retrieveContainerError(Error)
     case storeObjectError(Error)
     case fetchObjectError(Error)
+    case sendNotification
 }
 
 extension AppsControllerError {
@@ -30,6 +31,8 @@ extension AppsControllerError {
             return "storeObjectError: \(error.localizedDescription)"
         case .fetchObjectError(let error):
             return "fetchObjectError: \(error.localizedDescription)"
+        case .sendNotification:
+            return "sendNotification error"
         }
     }
 }
@@ -42,6 +45,7 @@ class AppsController {
     private let objstorage: ObjectStorage?
     private let dbName = "mydb"
     private let dbMgr: DatabaseManager?
+    private let notificationManager: NotificationManager?
 
     private let DefaultName = "build.ipa"
 
@@ -50,6 +54,7 @@ class AppsController {
         // Get database connection details...
         let cloudantServ: Service? = configMgr.getServices(type: "cloudantNoSQLDB").first
         dbMgr = DatabaseManager(dbName: dbName, cloudantServ: cloudantServ)
+        notificationManager = NotificationManager(configMgr: configMgr)
 
         objstorage = ObjectStorage(projectId: "07224055156344ee867c3f76ffd6248b")
         objstorage?.connect( userId: "bd3219d790b84a3a81e64def37cac42b",
@@ -69,7 +74,19 @@ class AppsController {
 //        let filePath = TemporaryFileCacheManager().saveFile(name: "temp.pdf", data: app)
 
         storeApp(app, name: DefaultName) { (result) in
-            completion(result)
+            
+            switch result {
+            case .failure(_): completion(result)
+            case .success():
+                self.notificationManager?.send(type: .notify(version: "1.2"), completion: { (result) in
+                    
+                    switch result {
+                    case .success(): completion(.success())
+                    case .failure(_): completion(.failure(.sendNotification))
+                    }
+                    
+                })
+            }
         }
     }
 

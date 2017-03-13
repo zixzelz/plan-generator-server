@@ -23,6 +23,7 @@ let package = Package(
     .Package(url: "https://github.com/IBM-Swift/CloudConfiguration.git", majorVersion: 1),
     .Package(url: "https://github.com/IBM-Swift/Kitura-CouchDB.git", majorVersion: 1, minor: 6),
     .Package(url: "https://github.com/ibm-bluemix-mobile-services/bluemix-objectstorage-serversdk-swift.git", majorVersion: 0, minor: 7),
+    .Package(url: "https://github.com/zixzelz/bms-pushnotifications-serversdk-swift", majorVersion: 0, minor: 4),
     //.Package(url: "https://github.com/iamjono/minizip.git", versions: Version(0,0,0)..<Version(10,0,0)),
 	]
 )
