@@ -3,5 +3,5 @@ applications:
  - name: PlanGenerator
    random-route: false
    memory: 256M
-   command: kitura-helloworld
+   command: Main
    buildpack: swift_buildpack
