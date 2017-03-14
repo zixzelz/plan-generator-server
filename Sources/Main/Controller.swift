@@ -31,7 +31,7 @@ public class Controller {
     }
 
     init() throws {
-        
+
         // Get environment variables from config.json or environment variables
         let configFile = URL(fileURLWithPath: #file).appendingPathComponent("../config.json").standardized
         configMgr = ConfigurationManager()
@@ -48,9 +48,9 @@ public class Controller {
     }
 
     public func getApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-        
+
         appController.app(name: "build.ipa") { (result) in
-            
+
             switch result {
             case .success(let data):
                 response.status(.OK).send(data: data)
@@ -58,21 +58,21 @@ public class Controller {
             case .failure(let error):
                 try? response.status(.internalServerError).send(json: JSON(["message": error.description])).end()
             }
-        }        
+        }
     }
-    
+
     public func addApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
 
-        guard let appBinary = getAppBinary(fromRequest: request) else {
+        guard let (appBinary, version) = getAppBinary(fromRequest: request) else {
             try? response.status(.badRequest).send("error!").end()
             return
         }
 
-        appController.processApp(app: appBinary) { (result) in
+        appController.processApp(app: appBinary, version: version) { (result) in
 
             switch result {
             case .success():
-                response.status(.OK).send(json: JSON([]))
+                response.status(.OK).send(json: JSON(["message": "Success"]))
                 next()
             case .failure(let error):
                 try? response.status(.internalServerError).send(json: JSON(["message": error.description])).end()
@@ -86,7 +86,7 @@ public class Controller {
             Log.warning("⚠️ Path: \(packagePath)")
 
             let packages = try fileManager.contentsOfDirectory(atPath: packagePath)
-            Log.warning("⭕️ \(packages)")
+            Log.warning("☢️ \(packages)")
 
             for package in packages {
 
@@ -102,20 +102,24 @@ public class Controller {
 
 fileprivate extension Controller {
 
-    fileprivate func getAppBinary(fromRequest request: RouterRequest) -> Data? {
+    fileprivate func getAppBinary(fromRequest request: RouterRequest) -> (Data, String)? {
 
-        guard let part = request.body?.asMultiPart?.first else {
-            Log.warning("❌ MultiPart payload not provided!")
+        guard let appPart = request.body?.asMultiPart?.first else {
+            Log.warning("❌ App Part payload not provided!")
             return nil
         }
-        Log.warning("⚠️ Upload file type: \(part.type)")
+        guard let version = request.body?.asMultiPart?.last?.body.asText, version.components(separatedBy: ".").count > 1 else {
+            Log.warning("❌ Version Part payload not provided!")
+            return nil
+        }
 
-        guard case .raw(let data) = part.body else {
+        Log.warning("⚠️ Upload file type: \(appPart.type) version: \(version)")
+        guard case .raw(let data) = appPart.body else {
             Log.warning("❌ Couldn't process image binary from multi-part form")
             return nil
         }
 
-        return data
+        return (data, version)
     }
 
 }

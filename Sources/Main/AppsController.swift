@@ -18,6 +18,7 @@ enum AppsControllerError: Error {
     case retrieveContainerError(Error)
     case storeObjectError(Error)
     case fetchObjectError(Error)
+    case setNewVersion
     case sendNotification
 }
 
@@ -31,6 +32,8 @@ extension AppsControllerError {
             return "storeObjectError: \(error.localizedDescription)"
         case .fetchObjectError(let error):
             return "fetchObjectError: \(error.localizedDescription)"
+        case .setNewVersion:
+            return "setNewVersion error"
         case .sendNotification:
             return "sendNotification error"
         }
@@ -48,6 +51,7 @@ class AppsController {
     private let notificationManager: NotificationManager?
 
     private let DefaultName = "build.ipa"
+    private let BuildUrl = "https://plangenerator.mybluemix.net/apps/build.ipa"
 
     init(configMgr: ConfigurationManager) {
 
@@ -70,23 +74,34 @@ class AppsController {
 
     }
 
-    func processApp(app: Data, completion: @escaping AppsControllerCompletionHandlet) {
+    func processApp(app: Data, version: String, completion: @escaping AppsControllerCompletionHandlet) {
 //        let filePath = TemporaryFileCacheManager().saveFile(name: "temp.pdf", data: app)
 
         storeApp(app, name: DefaultName) { (result) in
-            
-            switch result {
-            case .failure(_): completion(result)
-            case .success():
-                self.notificationManager?.send(type: .notify(version: "1.2"), completion: { (result) in
-                    
-                    switch result {
-                    case .success(): completion(.success())
-                    case .failure(_): completion(.failure(.sendNotification))
-                    }
-                    
-                })
+
+            guard case .success() = result else {
+                completion(result)
+                return
             }
+
+            Buddy().setNewVersion(version: version, url: self.BuildUrl, completion: { (result) in
+
+                guard case .success() = result else {
+                    completion(.failure(.setNewVersion))
+                    return
+                }
+
+                self.notificationManager?.send(type: .notify(version: "1.2"), completion: { (result) in
+
+                    guard case .success() = result else {
+                        completion(.failure(.sendNotification))
+                        return
+                    }
+
+                    completion(.success())
+                })
+
+            })
         }
     }
 
@@ -103,10 +118,10 @@ class AppsController {
             }
 
             container.retrieveObject(name: name) { (error, object) in
-                
+
                 guard let object = object else {
                     Log.error("[AppsController] ❌ retrieveObject error :: \(error)")
-                    
+
                     let error: Error = error ?? AppsController.defaultError()
                     completion(.failure(.fetchObjectError(error)))
                     return

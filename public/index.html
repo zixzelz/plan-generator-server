@@ -22,6 +22,9 @@
                 <input type="file" multiple="multiple" accept=".pdf"></input>
                 <div class="ajax-respond"></div>
                 
+                <p class="lead">Viersion number:</p>
+                <input id="viersionNumber" type="text" class="form-control" placeholder="Viersion number" aria-describedby="sizing-addon1" value="" />
+
                 <a href="#" class="submit button">Загрузить файлы</a>
             </div>
 
@@ -74,6 +77,8 @@
                 data.append( key, value );
             });
 
+            data.append( "viersionNumber", $('#viersionNumber').val() );
+                                  
             // Отправляем запрос
 
             $.ajax({
@@ -105,20 +110,18 @@
                 },
 				success: function( respond, textStatus, jqXHR ) {
 				   
+                   $('#buildInput').show();
 				   $('#progressContainer').hide();
 				   errorMessage.hide();
 
 					// Если все ОК
 
-					if( typeof respond.error === 'undefined' ) {
-						// Файлы успешно загружены, делаем что нибудь здесь
+					if ( typeof respond.error === 'undefined' ) {
 
-						// выведем пути к загруженным файлам в блок '.ajax-respond'
+                        var lson = JSON.parse(respond);
 
-						var files_path = respond.files;
-						var html = '';
-						$.each( files_path, function( key, val ){ html += val +'<br>'; } )
-						$('.ajax-respond').html( html );
+                        $('.ajax-respond').html( respond );
+
 					} else {
 						console.log('ОШИБКИ ОТВЕТА сервера: ' + respond.error );
 					}
