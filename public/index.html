@@ -65,6 +65,8 @@
             $('#progressContainer').show();
 			var progressBar = $('#progressbar');
 			var errorMessage = $('#errorMessage');
+                                  
+            errorMessage.hide();
 
             event.stopPropagation(); // Остановка происходящего
             event.preventDefault();  // Полная остановка происходящего
@@ -109,7 +111,6 @@
 				   
                    $('#buildInput').show();
 				   $('#progressContainer').hide();
-				   errorMessage.hide();
 
 					if ( typeof respond.error === 'undefined' ) {
 

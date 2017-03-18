@@ -127,9 +127,11 @@ class AppsController {
         ]
         let items: [String: Any] = ["assets": [asset], "metadata": metadata]
         let dict: [String: Any] = ["items": [items]]
+        
+        let nsDict: AnyObject = NSDictionary(dictionary: dict)
 
         do {
-            let data = try PropertyListSerialization.data(fromPropertyList: dict, format: PropertyListSerialization.PropertyListFormat.xml, options: 0)
+            let data = try PropertyListSerialization.data(fromPropertyList: nsDict, format: PropertyListSerialization.PropertyListFormat.xml, options: 0)
             completion(.success(data))
         } catch {
             completion(.failure(.createManifest(error)))
