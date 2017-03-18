@@ -20,6 +20,7 @@ enum AppsControllerError: Error {
     case fetchObjectError(Error)
     case setNewVersion
     case sendNotification
+    case createManifest(Error)
 }
 
 extension AppsControllerError {
@@ -36,6 +37,8 @@ extension AppsControllerError {
             return "setNewVersion error"
         case .sendNotification:
             return "sendNotification error"
+        case .createManifest:
+            return "createManifest error"
         }
     }
 }
@@ -51,7 +54,8 @@ class AppsController {
     private let notificationManager: NotificationManager?
 
     private let DefaultName = "build.ipa"
-    private let BuildUrl = "https://plangenerator.mybluemix.net/apps/build.ipa"
+    private let BuildManifest = "https://plangenerator.mybluemix.net/api/apps"
+    private let BuildUrl = "https://plangenerator.mybluemix.net/api/storage/build.ipa"
 
     init(configMgr: ConfigurationManager) {
 
@@ -74,7 +78,7 @@ class AppsController {
 
     }
 
-    func processApp(app: Data, version: String, completion: @escaping AppsControllerCompletionHandlet) {
+    func add(app: Data, version: String, completion: @escaping AppsControllerCompletionHandlet) {
 //        let filePath = TemporaryFileCacheManager().saveFile(name: "temp.pdf", data: app)
 
         storeApp(app, name: DefaultName) { (result) in
@@ -84,14 +88,16 @@ class AppsController {
                 return
             }
 
-            Buddy().setNewVersion(version: version, url: self.BuildUrl, completion: { (result) in
+            Buddy().setNewVersion(version: version, url: self.BuildManifest, completion: { (result) in
 
                 guard case .success() = result else {
                     completion(.failure(.setNewVersion))
                     return
                 }
 
-                self.notificationManager?.send(type: .notify(version: "1.2"), completion: { (result) in
+                UserDefaults.standard.set(version, forKey: "bundle-version")
+
+                self.notificationManager?.send(type: .notify(version: version), completion: { (result) in
 
                     guard case .success() = result else {
                         completion(.failure(.sendNotification))
@@ -105,7 +111,32 @@ class AppsController {
         }
     }
 
-    func app(name: String, completion: @escaping GetAppControllerCompletionHandlet) {
+    func manifest(appId: String, completion: @escaping GetAppControllerCompletionHandlet) {
+
+        let version = UserDefaults.standard.string(forKey: "bundle-version") ?? "0.0"
+
+        let asset = [
+            "kind": "software-package",
+            "url": BuildUrl,
+        ]
+        let metadata = [
+            "bundle-identifier": "com.grsu.PlanGenerator",
+            "bundle-version": version,
+            "kind": "software",
+            "title": "PlanGenerator",
+        ]
+        let items: [String: Any] = ["assets": [asset], "metadata": metadata]
+        let dict: [String: Any] = ["items": [items]]
+
+        do {
+            let data = try PropertyListSerialization.data(fromPropertyList: dict, format: PropertyListSerialization.PropertyListFormat.xml, options: 0)
+            completion(.success(data))
+        } catch {
+            completion(.failure(.createManifest(error)))
+        }
+    }
+
+    func app(appId: String, completion: @escaping GetAppControllerCompletionHandlet) {
 
         objstorage?.retrieveContainer(name: "apps") { (error, container) in
 
@@ -117,7 +148,7 @@ class AppsController {
                 return
             }
 
-            container.retrieveObject(name: name) { (error, object) in
+            container.retrieveObject(name: appId) { (error, object) in
 
                 guard let object = object else {
                     Log.error("[AppsController] ❌ retrieveObject error :: \(error)")

@@ -20,7 +20,6 @@
             <div id="buildInput" class="input-group-lg helloInput">
                 <p class="lead">Submit build</p>
                 <input type="file" multiple="multiple" accept=".pdf"></input>
-                <div class="ajax-respond"></div>
                 
                 <p class="lead">Viersion number:</p>
                 <input id="viersionNumber" type="text" class="form-control" placeholder="Viersion number" aria-describedby="sizing-addon1" value="" />
@@ -94,11 +93,9 @@
 					xhr.upload.addEventListener('progress', function(evt) { // добавляем обработчик события progress (onprogress)
 						
 						if(evt.lengthComputable) { // если известно количество байт
-							console.log("evt.lengthComputableера: " + evt.lengthComputable );
 							
 							// высчитываем процент загруженного
 							var percentComplete = Math.ceil(evt.loaded / evt.total * 100);
-							console.log("percentComplete: " + percentComplete );
 							
 							// устанавливаем значение в атрибут value тега <progress>
 							// и это же значение альтернативным текстом для браузеров, не поддерживающих <progress>
@@ -114,13 +111,10 @@
 				   $('#progressContainer').hide();
 				   errorMessage.hide();
 
-					// Если все ОК
-
 					if ( typeof respond.error === 'undefined' ) {
 
-                        var lson = JSON.parse(respond);
-
-                        $('.ajax-respond').html( respond );
+                        errorMessage.html(respond.message);
+                        errorMessage.show();
 
 					} else {
 						console.log('ОШИБКИ ОТВЕТА сервера: ' + respond.error );
@@ -137,39 +131,6 @@
             });
 
         });
-        
-    	//Submit data when enter key is pressed
-        $('#user_name').keydown(function(e) {
-        	var name = $('#user_name').val();
-            if (e.which == 13 && name.length > 0) { //catch Enter key
-                $('#buildInput').hide();
-           		$('#response').html("loading...");
-            	//POST request to API to create a new visitor entry in the database
-                $.ajax({
-        				  method: "POST",
-        				  url: "./api/visitors",
-        				  contentType: "application/json",
-        				  data: JSON.stringify({name: name })
-        				})
-              .done(function(data) {
-                  $('#response').html(data);
-                  $('#buildInput').hide();
-                    getNames();
-              });
-            }
-        });
-
-        //Retreive all the visitors from the database
-        function getNames(){
-          $.get("./api/visitors")
-              .done(function(data) {
-                  if(data.length > 0) {
-                    $('#databaseNames').html("Database contents: " + JSON.stringify(data));
-                  }
-              });
-          }
-          //Call getNames on page load.
-          getNames();
     </script>
 </body>
 

@@ -45,11 +45,32 @@ public class Controller {
         router.all("/api/apps", middleware: BodyParser())
         router.get("/api/apps", handler: getApplication)
         router.post("/api/apps", handler: addApplication)
+        router.get("/api/storage/:objectId", handler: getObject)
     }
 
     public func getApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
 
-        appController.app(name: "build.ipa") { (result) in
+        appController.manifest(appId: "") { (result) in
+
+            switch result {
+            case .success(let data):
+                response.headers["Content-Type:"] = "application/xml"
+                response.status(.OK).send(data: data)
+                next()
+            case .failure(let error):
+                try? response.status(.internalServerError).send(json: JSON(["message": error.description])).end()
+            }
+        }
+    }
+
+    public func getObject(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+
+        guard let objectId = request.parameters["objectId"] else {
+            try? response.status(.badRequest).send(json: JSON(["message": "No object ID"])).end()
+            return
+        }
+
+        appController.app(appId: objectId) { (result) in
 
             switch result {
             case .success(let data):
@@ -59,6 +80,7 @@ public class Controller {
                 try? response.status(.internalServerError).send(json: JSON(["message": error.description])).end()
             }
         }
+
     }
 
     public func addApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
@@ -68,7 +90,7 @@ public class Controller {
             return
         }
 
-        appController.processApp(app: appBinary, version: version) { (result) in
+        appController.add(app: appBinary, version: version) { (result) in
 
             switch result {
             case .success():
