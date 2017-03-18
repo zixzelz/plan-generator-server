@@ -119,6 +119,7 @@ class AppsController {
             "kind": "software-package",
             "url": BuildUrl,
         ]
+        
         let metadata = [
             "bundle-identifier": "com.grsu.PlanGenerator",
             "bundle-version": version,
