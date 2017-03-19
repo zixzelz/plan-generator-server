@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4440B88D1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */; };
 		OBJ_210 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Logger.swift */; };
 		OBJ_217 /* HeliumLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* HeliumLogger.swift */; };
 		OBJ_218 /* HeliumStreamLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* HeliumStreamLogger.swift */; };
@@ -967,6 +968,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerExpanded.swift; sourceTree = "<group>"; };
 		OBJ_100 /* JSONBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_101 /* MultiPartBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPartBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_102 /* ParsedBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedBody.swift; sourceTree = "<group>"; };
@@ -1584,6 +1586,7 @@
 				OBJ_175 /* NotificationManager.swift */,
 				OBJ_176 /* Result.swift */,
 				OBJ_177 /* TemporaryFileCacheManager.swift */,
+				4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */,
 			);
 			name = Main;
 			path = Sources/Main;
@@ -1716,7 +1719,7 @@
 			path = HTTP;
 			sourceTree = "<group>";
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -1725,7 +1728,6 @@
 				OBJ_181 /* public */,
 				OBJ_182 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_54 /* HTTPParser */ = {
@@ -2333,7 +2335,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_182 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -2650,6 +2652,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
+				4440B88D1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift in Sources */,
 				OBJ_588 /* AppsController.swift in Sources */,
 				OBJ_589 /* Buddy.swift in Sources */,
 				OBJ_590 /* Controller.swift in Sources */,

@@ -27,9 +27,13 @@ class NotificationManager {
 
     init(configMgr: ConfigurationManager) {
 
+        let isDev = configMgr.isDev
+        let appGuid = isDev ? "dc9eac1a-b139-40a6-a402-12dd59aa46ec" : "dc8e4ba2-03f8-4ac2-8a7f-47b85ff277ab"
+        let appSecret = isDev ? "bddc9121-15df-4c3c-a8ce-7912f093ea2e" : "f44a5065-e063-4496-8fb1-371278eb8153"
+
         myPushNotifications = PushNotifications(bluemixRegion: PushNotifications.Region.US_SOUTH,
-                                                bluemixAppGuid: "dc9eac1a-b139-40a6-a402-12dd59aa46ec",
-                                                bluemixAppSecret: "bddc9121-15df-4c3c-a8ce-7912f093ea2e")
+                                                bluemixAppGuid: appGuid,
+                                                bluemixAppSecret: appSecret)
 
     }
 

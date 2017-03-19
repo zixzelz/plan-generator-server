@@ -20,7 +20,7 @@ enum AppsControllerError: Error {
     case fetchObjectError(Error)
     case setNewVersion
     case sendNotification
-    case createManifest(Error)
+    case createManifest(Error?)
 }
 
 extension AppsControllerError {
@@ -53,9 +53,11 @@ class AppsController {
     private let dbMgr: DatabaseManager?
     private let notificationManager: NotificationManager?
 
-    private let DefaultName = "build.ipa"
-    private let BuildManifest = "https://plangenerator.mybluemix.net/api/apps"
-    private let BuildUrl = "https://plangenerator.mybluemix.net/api/storage/build.ipa"
+    private var storageContainer: String
+    
+    private var DefaultName = "build.ipa"
+    private var BuildManifest = "https://plangenerator.mybluemix.net/api/apps"
+    private var BuildUrl = "https://plangenerator.mybluemix.net/api/storage/build.ipa"
 
     init(configMgr: ConfigurationManager) {
 
@@ -64,6 +66,10 @@ class AppsController {
         dbMgr = DatabaseManager(dbName: dbName, cloudantServ: cloudantServ)
         notificationManager = NotificationManager(configMgr: configMgr)
 
+        storageContainer = configMgr.isDev ? "apps-dev" : "apps"
+        BuildManifest = configMgr.url + "/api/apps"
+        BuildUrl = configMgr.url + "/api/storage/" + DefaultName
+        
         objstorage = ObjectStorage(projectId: "07224055156344ee867c3f76ffd6248b")
         objstorage?.connect( userId: "bd3219d790b84a3a81e64def37cac42b",
                             password: "tZ7yE&J9IFPlh-y]",
@@ -88,38 +94,37 @@ class AppsController {
                 return
             }
 
-            Buddy().setNewVersion(version: version, url: self.BuildManifest, completion: { (result) in
+            UserDefaults.standard.set(version, forKey: "bundle-version")
+
+            self.notificationManager?.send(type: .notify(version: version), completion: { (result) in
 
                 guard case .success() = result else {
-                    completion(.failure(.setNewVersion))
+                    completion(.failure(.sendNotification))
                     return
                 }
 
-                UserDefaults.standard.set(version, forKey: "bundle-version")
-
-                self.notificationManager?.send(type: .notify(version: version), completion: { (result) in
-
-                    guard case .success() = result else {
-                        completion(.failure(.sendNotification))
-                        return
-                    }
-
-                    completion(.success())
-                })
-
+                completion(.success())
             })
         }
     }
 
+    func getLatestVersion(appId: String = "") -> [String: String]? {
+        guard let version = UserDefaults.standard.string(forKey: "bundle-version") else { return nil }
+        return ["version": version, "url": BuildManifest]
+    }
+
     func manifest(appId: String, completion: @escaping GetAppControllerCompletionHandlet) {
 
-        let version = UserDefaults.standard.string(forKey: "bundle-version") ?? "0.0"
+        guard let version = UserDefaults.standard.string(forKey: "bundle-version") else {
+            completion(.failure(.createManifest(nil)))
+            return
+        }
 
         let asset = [
             "kind": "software-package",
             "url": BuildUrl,
         ]
-        
+
         let metadata = [
             "bundle-identifier": "com.grsu.PlanGenerator",
             "bundle-version": version,
@@ -128,7 +133,7 @@ class AppsController {
         ]
         let items: [String: Any] = ["assets": [asset], "metadata": metadata]
         let dict: [String: Any] = ["items": [items]]
-        
+
         let nsDict: AnyObject = NSDictionary(dictionary: dict)
 
         do {
@@ -168,7 +173,7 @@ class AppsController {
 
     fileprivate func storeApp(_ appBinary: Data, name: String, completion: @escaping AppsControllerCompletionHandlet) {
 
-        objstorage?.retrieveContainer(name: "apps") { (error, container) in
+        objstorage?.retrieveContainer(name: storageContainer) { (error, container) in
 
             guard let container = container else {
                 Log.error("[AppsController] ❌ retrieveContainer error :: \(error)")
