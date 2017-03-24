@@ -13,6 +13,7 @@ import Configuration
 import CloudFoundryEnv
 import CloudFoundryConfig
 import CouchDB
+import SwiftyJSON
 
 enum AppsControllerError: Error {
     case retrieveContainerError(Error)
@@ -21,6 +22,11 @@ enum AppsControllerError: Error {
     case setNewVersion
     case sendNotification
     case createManifest(Error?)
+    
+    case storeData(Error)
+    case dbMgr
+    case noDatabase
+    case internalError
 }
 
 extension AppsControllerError {
@@ -39,6 +45,10 @@ extension AppsControllerError {
             return "sendNotification error"
         case .createManifest:
             return "createManifest error"
+        case .storeData:
+            return "storeData error"
+        default:
+            return "some error"
         }
     }
 }
@@ -46,10 +56,13 @@ extension AppsControllerError {
 typealias AppsControllerCompletionHandlet = (MainResult<Void, AppsControllerError>) -> Void
 typealias GetAppControllerCompletionHandlet = (MainResult<Data, AppsControllerError>) -> Void
 
+typealias StoreValueCH = (MainResult<String, AppsControllerError>) -> Void
+typealias GetValueCH = (MainResult<JSON, AppsControllerError>) -> Void
+
 class AppsController {
 
     private let objstorage: ObjectStorage?
-    private let dbName = "mydb"
+    private let dbName: String
     private let dbMgr: DatabaseManager?
     private let notificationManager: NotificationManager?
 
@@ -60,6 +73,8 @@ class AppsController {
     private var BuildUrl = "https://plangenerator.mybluemix.net/api/storage/build.ipa"
 
     init(configMgr: ConfigurationManager) {
+        
+        dbName = configMgr.isDev ? "apps-dev" : "apps"
 
         // Get database connection details...
         let cloudantServ: Service? = configMgr.getServices(type: "cloudantNoSQLDB").first
@@ -87,28 +102,42 @@ class AppsController {
     func add(app: Data, version: String, completion: @escaping AppsControllerCompletionHandlet) {
 //        let filePath = TemporaryFileCacheManager().saveFile(name: "temp.pdf", data: app)
 
-        storeApp(app, name: DefaultName) { (result) in
-
-            guard case .success() = result else {
-                completion(result)
+        self.addVersion(version: version) { (result) in
+            
+            guard case .success(let id) = result else {
+                completion(.failure(.setNewVersion))
                 return
             }
-
-            UserDefaults.standard.set(version, forKey: "bundle-version")
-
-            self.notificationManager?.send(type: .notify(version: version), completion: { (result) in
-
+            
+            self.storeApp(app, name: id) { (result) in
+                
                 guard case .success() = result else {
-                    completion(.failure(.sendNotification))
+                    completion(result)
                     return
                 }
-
-                completion(.success())
-            })
+                
+                self.notificationManager?.send(type: .notify(version: version), completion: { (result) in
+                    
+                    guard case .success() = result else {
+                        completion(.failure(.sendNotification))
+                        return
+                    }
+                    
+                    completion(.success())
+                })
+            }
         }
     }
 
     func getLatestVersion(appId: String = "") -> [String: String]? {
+        
+        let ss = UserDefaults.standard
+        Log.warning("⚠️ ss: \(ss)")
+        
+        ss.set("mykey", forKey: "mykey")
+        let mykey = ss.string(forKey: "mykey")
+        Log.warning("⚠️ ss: \(mykey)")
+
         guard let version = UserDefaults.standard.string(forKey: "bundle-version") else { return nil }
         return ["version": version, "url": BuildManifest]
     }
@@ -246,56 +275,51 @@ class AppsController {
 //        }
 //    }
 //
-//    /**
-//     * Creates a new Visitor.
-//     *
-//     * REST API example:
-//     * <code>
-//     * POST http://localhost:8080/api/visitors
-//     * <code>
-//     * POST Body:
-//     * <code>
-//     * {
-//     *   "name":"Bob"
-//     * }
-//     * </code>
-//     */
-//    public func addVisitors(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-//        guard let jsonPayload = request.body?.asJSON else {
-//            try response.status(.badRequest).send("JSON payload not provided!").end()
-//            return
-//        }
-//
-//        let name = jsonPayload["name"].string ?? ""
-//        //let json: [String: Any] = [ "name": name ]
-//
-//        guard let dbMgr = self.dbMgr else {
-//            Log.warning(">> No database manager.")
-//            response.status(.OK).send("Hello \(name)!")
-//            next()
-//            return
-//        }
-//
-//        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
-//            guard let db = db else {
-//                Log.error(">> No database.")
-//                response.status(.internalServerError)
-//                next()
-//                return
-//            }
-//
-//            db.create(jsonPayload, callback: { (id: String?, rev: String?, document: JSON?, error: NSError?) in
-//                if let _ = error {
-//                    Log.error(">> Could not persist document to database.")
-//                    Log.error(">> Error: \(error)")
-//                    response.status(.OK).send("Hello \(name)!")
-//                } else {
-//                    Log.info(">> Successfully created the following JSON document in CouchDB:\n\t\(document)")
-//                    response.status(.OK).send("Hello \(name)! I added you to the database.")
-//                }
-//                next()
-//            })
-//        }
-//    }
+    /**
+     * Creates a new Visitor.
+     *
+     * REST API example:
+     * <code>
+     * POST http://localhost:8080/api/visitors
+     * <code>
+     * POST Body:
+     * <code>
+     * {
+     *   "name":"Bob"
+     * }
+     * </code>
+     */
+    public func addVersion(version: String, completion: @escaping StoreValueCH) {
+
+        let json: [String: Any] = [ "bundle-version": version ]
+
+        guard let dbMgr = self.dbMgr else {
+            completion(.failure(.dbMgr))
+            return
+        }
+
+        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
+            guard let db = db else {
+                Log.error(">> No database.")
+                completion(.failure(.noDatabase))
+                return
+            }
+
+            db.create(JSON(json), callback: { (id: String?, rev: String?, document: JSON?, error: NSError?) in
+
+                if let error = error {
+                    Log.error(">> Could not persist document to database.")
+                    Log.error(">> Error: \(error)")
+                    completion(.failure(.storeData(error)))
+                } else if let id = id {
+                    Log.info(">> Successfully created the following JSON document in CouchDB:\n\t\(document)")
+                    completion(.success(id))
+                } else {
+                    Log.error(">> internalError.")
+                    completion(.failure(.internalError))
+                }
+            })
+        }
+    }
 
 }

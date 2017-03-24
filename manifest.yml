@@ -2,6 +2,5 @@
 applications:
  - name: PlanGenerator
    random-route: false
-   memory: 256M
    command: Main
    buildpack: swift_buildpack

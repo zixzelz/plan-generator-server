@@ -47,6 +47,8 @@ public class Controller {
         router.get("/api/apps/latest", handler: getLatestVersion)
         router.post("/api/apps", handler: addApplication)
         router.get("/api/storage/:objectId", handler: getObject)
+        
+        Log.warning("⚠️ isDev: \(configMgr.isDev)")
     }
 
     public func getApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {

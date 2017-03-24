@@ -968,6 +968,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		443C6D661E847FD000FDC7C2 /* MyPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground.playground; sourceTree = "<group>"; };
 		4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerExpanded.swift; sourceTree = "<group>"; };
 		OBJ_100 /* JSONBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_101 /* MultiPartBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPartBodyParser.swift; sourceTree = "<group>"; };
@@ -1587,6 +1588,7 @@
 				OBJ_176 /* Result.swift */,
 				OBJ_177 /* TemporaryFileCacheManager.swift */,
 				4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */,
+				443C6D661E847FD000FDC7C2 /* MyPlayground.playground */,
 			);
 			name = Main;
 			path = Sources/Main;

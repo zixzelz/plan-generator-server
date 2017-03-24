@@ -17,7 +17,29 @@
                        "domainName": "1075761"
                    }
                }
-            ]
+            ],
+			"cloudantNoSQLDB": [
+				{
+					"credentials": {
+						"username": "5f922002-e3a1-4e20-9b4f-255f412120f8-bluemix",
+						"password": "e4d0eced836660690dc023ea8671fc56d11fac30f4e325812309d413299625bf",
+						"host": "5f922002-e3a1-4e20-9b4f-255f412120f8-bluemix.cloudant.com",
+						"port": 443,
+						"url": "https://5f922002-e3a1-4e20-9b4f-255f412120f8-bluemix:e4d0eced836660690dc023ea8671fc56d11fac30f4e325812309d413299625bf@5f922002-e3a1-4e20-9b4f-255f412120f8-bluemix.cloudant.com"
+					},
+					"syslog_drain_url": null,
+					"label": "cloudantNoSQLDB",
+					"provider": null,
+					"plan": "Lite",
+					"name": "Cloudant NoSQL DB-pg",
+					"tags": [
+						"data_management",
+						"ibm_created",
+						"lite",
+						"ibm_dedicated_public"
+					]
+				}
+			]
         }
     }
 }
