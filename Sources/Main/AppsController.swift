@@ -22,7 +22,7 @@ enum AppsControllerError: Error {
     case setNewVersion
     case sendNotification
     case createManifest(Error?)
-    
+
     case storeData(Error)
     case dbMgr
     case noDatabase
@@ -64,16 +64,16 @@ class AppsController {
     private let objstorage: ObjectStorage?
     private let dbName: String
     private let dbMgr: DatabaseManager?
-    private let notificationManager: NotificationManager?
+    private let notificationManager: NotificationManager
 
     private var storageContainer: String
-    
+
     private var DefaultName = "build.ipa"
     private var BuildManifest = "https://plangenerator.mybluemix.net/api/apps"
     private var BuildUrl = "https://plangenerator.mybluemix.net/api/storage/build.ipa"
 
     init(configMgr: ConfigurationManager) {
-        
+
         dbName = configMgr.isDev ? "apps-dev" : "apps"
 
         // Get database connection details...
@@ -84,7 +84,7 @@ class AppsController {
         storageContainer = configMgr.isDev ? "apps-dev" : "apps"
         BuildManifest = configMgr.url + "/api/apps"
         BuildUrl = configMgr.url + "/api/storage/" + DefaultName
-        
+
         objstorage = ObjectStorage(projectId: "07224055156344ee867c3f76ffd6248b")
         objstorage?.connect( userId: "bd3219d790b84a3a81e64def37cac42b",
                             password: "tZ7yE&J9IFPlh-y]",
@@ -102,38 +102,40 @@ class AppsController {
     func add(app: Data, version: String, completion: @escaping AppsControllerCompletionHandlet) {
 //        let filePath = TemporaryFileCacheManager().saveFile(name: "temp.pdf", data: app)
 
-        self.addVersion(version: version) { (result) in
-            
+        Make.next { (done) in
+            self.addVersion(version: version, completion: done)
+        }.next { (result, done: @escaping AppsControllerCompletionHandlet) in
+
             guard case .success(let id) = result else {
                 completion(.failure(.setNewVersion))
                 return
             }
-            
-            self.storeApp(app, name: id) { (result) in
-                
-                guard case .success() = result else {
-                    completion(result)
-                    return
-                }
-                
-                self.notificationManager?.send(type: .notify(version: version), completion: { (result) in
-                    
-                    guard case .success() = result else {
-                        completion(.failure(.sendNotification))
-                        return
-                    }
-                    
-                    completion(.success())
-                })
+
+            self.storeApp(app, name: id, completion: done)
+        }.next { (result, done: @escaping NotificationManagerCompletionHandlet) in
+
+            guard case .success() = result else {
+                completion(result)
+                return
             }
+            
+            self.notificationManager.send(type: .notify(version: version), completion: done)
+        }.completed { (result) in
+            
+            guard case .success() = result else {
+                completion(.failure(.sendNotification))
+                return
+            }
+            
+            completion(.success())
         }
     }
 
     func getLatestVersion(appId: String = "") -> [String: String]? {
-        
+
         let ss = UserDefaults.standard
         Log.warning("⚠️ ss: \(ss)")
-        
+
         ss.set("mykey", forKey: "mykey")
         let mykey = ss.string(forKey: "mykey")
         Log.warning("⚠️ ss: \(mykey)")
@@ -291,7 +293,7 @@ class AppsController {
      */
     public func addVersion(version: String, completion: @escaping StoreValueCH) {
 
-        let json: [String: Any] = [ "bundle-version": version ]
+        let json: [String: Any] = [ "bundle-version": version]
 
         guard let dbMgr = self.dbMgr else {
             completion(.failure(.dbMgr))

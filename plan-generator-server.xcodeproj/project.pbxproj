@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		4440B88D1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */; };
+		44A1FAD31E88188000D319F9 /* Make.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A1FAD21E88188000D319F9 /* Make.swift */; };
 		OBJ_210 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Logger.swift */; };
 		OBJ_217 /* HeliumLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* HeliumLogger.swift */; };
 		OBJ_218 /* HeliumStreamLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* HeliumStreamLogger.swift */; };
@@ -970,6 +971,7 @@
 /* Begin PBXFileReference section */
 		443C6D661E847FD000FDC7C2 /* MyPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground.playground; sourceTree = "<group>"; };
 		4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerExpanded.swift; sourceTree = "<group>"; };
+		44A1FAD21E88188000D319F9 /* Make.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Make.swift; sourceTree = "<group>"; };
 		OBJ_100 /* JSONBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_101 /* MultiPartBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPartBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_102 /* ParsedBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedBody.swift; sourceTree = "<group>"; };
@@ -1589,6 +1591,7 @@
 				OBJ_177 /* TemporaryFileCacheManager.swift */,
 				4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */,
 				443C6D661E847FD000FDC7C2 /* MyPlayground.playground */,
+				44A1FAD21E88188000D319F9 /* Make.swift */,
 			);
 			name = Main;
 			path = Sources/Main;
@@ -2659,6 +2662,7 @@
 				OBJ_589 /* Buddy.swift in Sources */,
 				OBJ_590 /* Controller.swift in Sources */,
 				OBJ_591 /* DatabaseManager.swift in Sources */,
+				44A1FAD31E88188000D319F9 /* Make.swift in Sources */,
 				OBJ_592 /* main.swift in Sources */,
 				OBJ_593 /* NotificationManager.swift in Sources */,
 				OBJ_594 /* Result.swift in Sources */,
