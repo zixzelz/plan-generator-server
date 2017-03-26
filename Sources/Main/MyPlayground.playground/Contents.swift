@@ -1,7 +1,9 @@
 //: Playground - noun: a place where people can play
 
 import UIKit
+import PlaygroundSupport
 
+PlaygroundPage.current.needsIndefiniteExecution = true
 //enum Result<Value, Error: Swift.Error> {
 //    case success(Value)
 //    case error(Error)
@@ -10,18 +12,18 @@ import UIKit
 typealias MakeBlock <V, U> = (_ result: V, _ done: @escaping (_ result: U) -> Void) -> Void
 typealias MakeVoidBlock <U> = (_ done: @escaping (_ result: U) -> Void) -> Void
 
-class Makes {
-    static func next <U> (block: @escaping MakeVoidBlock<U>) -> Make<Void, U> {
+struct Make {
+    static func next <U> (block: @escaping MakeVoidBlock<U>) -> MakeOne<Void, U> {
 
         let mainBlock: MakeVoidBlock<U> = { done in
             block(done)
         }
 
-        return Make <Void, U> (main: mainBlock)
+        return MakeOne <Void, U> (main: mainBlock)
     }
 }
 
-class Make<InValue, OutValue> {
+struct MakeOne<InValue, OutValue> {
 
     typealias MainBlock = MakeVoidBlock<OutValue>
 
@@ -32,56 +34,89 @@ class Make<InValue, OutValue> {
         print("init block \(self)")
     }
 
-    deinit {
-        print("deinit block \(self)")
-    }
-    
-    func next <U> (block: @escaping MakeBlock<OutValue, U>) -> Make<OutValue, U> {
+    func next <U> (block: @escaping MakeBlock<OutValue, U>) -> MakeOne<OutValue, U> {
 
         let mainBlock: MakeVoidBlock<U> = { done in
             print("call mainBlock")
 
             self.main() { res in
-                
+
                 block(res, done)
             }
         }
 
-        return Make <OutValue, U> (main: mainBlock)
+        return MakeOne <OutValue, U> (main: mainBlock)
     }
 
     func completed(block: @escaping (_ result: OutValue) -> Void) {
         print("call completed")
-        
+
         main(block)
+    }
+
+    func map <U> (_ transform: @escaping (OutValue) -> U) -> MakeOne<OutValue, U> {
+        let mainBlock: MakeVoidBlock<U> = { done in
+            print("call mainBlock")
+
+            self.main() { res in
+                done(transform(res))
+            }
+        }
+
+        return MakeOne <OutValue, U> (main: mainBlock)
     }
 
 }
 
-Makes.next { (done: (Int) -> Void) in
+func work1(p1: Int, completion: @escaping (_ result: Int) -> Void) {
+    DispatchQueue.main.async {
+        completion(p1 * 2)
+    }
+}
+
+func work2(_ p1: String, completion: @escaping (_ result: String) -> Void) {
+    DispatchQueue.main.async {
+        completion(p1)
+    }
+}
+
+func work3(el1: String, el2: String, completion: @escaping (_ result: [String]) -> Void) {
+    DispatchQueue.main.async {
+        completion([el1, el2])
+    }
+}
+
+Make.next { (done: @escaping (Int) -> Void) in
     print("begin")
-    done(5)
-    
-}.next { (res, done: (String) -> Void) in
+    work1(p1: 2) { res in
+        done(res)
+    }
 
-    print("res: \(res)")
-    let vc = "\(res * 2)"
-    done(vc)
+}.map {"\($0)"}
+.next { (res, done: @escaping (String) -> Void) in
 
-}.next { (res, done: ([String]) -> Void) in
+    print("res of work 1: \(res)") // "4"
+    let p1 = res + ".1"
+    work2(p1) { res in
+        done(res)
+    }
 
-    print("res: \(res)")
-    let v = res + "00"
-    done([res, v])
+}.next { (res, done: @escaping ([String]) -> Void) in
+
+    print("res of work 2: \(res)")
+    let salt = "salt"
+    work3(el1: res, el2: salt) { res in
+        done(res)
+    }
 
 }.completed { (res) in
-    
-    print("res: \(res)")
+
+    print("completed: \(res)") // ["4.1", "salt"]
 }
 
 print("Finish")
 
-//
+
 //typealias a1Completion = Result<String, NSError>
 //func a1(completion: @escaping (_ result: a1Completion) -> Void) {
 //
