@@ -20,6 +20,7 @@ enum AppsControllerError: Error {
     case storeObjectError(Error)
     case fetchObjectError(Error)
     case setNewVersion
+    case getLatestVersion
     case sendNotification
     case createManifest(Error?)
 
@@ -54,10 +55,11 @@ extension AppsControllerError {
 }
 
 typealias AppsControllerCompletionHandlet = (MainResult<Void, AppsControllerError>) -> Void
+typealias GetAppVersionControllerCompletionHandlet = (MainResult<[String: String], AppsControllerError>) -> Void
 typealias GetAppControllerCompletionHandlet = (MainResult<Data, AppsControllerError>) -> Void
 
 typealias StoreValueCH = (MainResult<String, AppsControllerError>) -> Void
-typealias GetValueCH = (MainResult<JSON, AppsControllerError>) -> Void
+typealias GetValueCH = (MainResult<[String: String], AppsControllerError>) -> Void
 
 class AppsController {
 
@@ -131,17 +133,20 @@ class AppsController {
         }
     }
 
-    func getLatestVersion(appId: String = "") -> [String: String]? {
+    func getLatestVersion(appId: String = "", completion: @escaping GetAppVersionControllerCompletionHandlet) {
 
-        let ss = UserDefaults.standard
-        Log.warning("⚠️ ss: \(ss)")
+        getLatestAppVersion { (result) in
+            
+            guard case .success(let dict) = result, let id = dict["id"], let version = dict["version"] else {
+                completion(.failure(.getLatestVersion))
+                return
+            }
 
-        ss.set("mykey", forKey: "mykey")
-        let mykey = ss.string(forKey: "mykey")
-        Log.warning("⚠️ ss: \(mykey)")
-
-        guard let version = UserDefaults.standard.string(forKey: "bundle-version") else { return nil }
-        return ["version": version, "url": BuildManifest]
+            let url = self.BuildManifest
+            let res = ["version": version, "url": url]
+            
+            completion(.success(res))
+        }
     }
 
     func manifest(appId: String, completion: @escaping GetAppControllerCompletionHandlet) {
@@ -230,72 +235,47 @@ class AppsController {
         return NSError(domain: "AppsController", code: 0, userInfo: nil)
     }
 
-    /**
-     * Gets all Visitors.
-     * REST API example:
-     * <code>
-     * GET http://localhost:8080/api/visitors
-     * </code>
-     *
-     * Response:
-     * <code>
-     * [ "Bob", "Jane" ]
-     * </code>
-     * @return An array of all the Visitors
-     */
-//    public func getVisitors(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-//        // If no database, return empty array.
-//        guard let dbMgr = self.dbMgr else {
-//            Log.warning(">> No database manager.")
-//            response.status(.OK).send(json: JSON([]))
-//            next()
-//            return
-//        }
-//
-//        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
-//            guard let db = db else {
-//                Log.error(">> No database.")
-//                response.status(.internalServerError)
-//                next()
-//                return
-//            }
-//
-//            db.retrieveAll(includeDocuments: true) { docs, error in
-//                guard let docs = docs else {
-//                    Log.error(">> Could not read from database or none exists.")
-//                    response.status(.badRequest).send("Error could not read from database or none exists")
-//                    return
-//                }
-//
-//                Log.info(">> Successfully retrived all docs from db.")
-//                let names = docs["rows"].map { _, row in
-//                    return row["doc"]["name"].string ?? ""
-//                }
-//                response.status(.OK).send(json: JSON(names))
-//                next()
-//            }
-//        }
-//    }
-//
-    /**
-     * Creates a new Visitor.
-     *
-     * REST API example:
-     * <code>
-     * POST http://localhost:8080/api/visitors
-     * <code>
-     * POST Body:
-     * <code>
-     * {
-     *   "name":"Bob"
-     * }
-     * </code>
-     */
+    public func getLatestAppVersion(completion: @escaping GetValueCH) {
+
+        guard let dbMgr = self.dbMgr else {
+            Log.error(">> No database manager.")
+            completion(.failure(.dbMgr))
+            return
+        }
+
+        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
+            guard let db = db else {
+                Log.error(">> No database.")
+                completion(.failure(.noDatabase))
+                return
+            }
+
+            db.retrieveAll(includeDocuments: true) { docs, error in
+                guard let docs = docs else {
+                    Log.error(">> Could not read from database or none exists.")
+                    completion(.failure(.dbMgr))
+                    return
+                }
+
+                Log.info(">> Successfully retrived all docs from db.")
+                
+                let doc = docs["rows"].array?.first?["doc"]
+                let id = doc?["_id"].string!
+                let version = doc?["bundle-version"].string!
+                
+                let res = ["id": id!, "version": version!]
+                
+                completion(.success(res))
+            }
+        }
+    }
+
     public func addVersion(version: String, completion: @escaping StoreValueCH) {
 
         let json: [String: Any] = [ "bundle-version": version]
 
         guard let dbMgr = self.dbMgr else {
+            Log.error(">> No database manager.")
             completion(.failure(.dbMgr))
             return
         }
@@ -323,5 +303,5 @@ class AppsController {
             })
         }
     }
-
+    
 }

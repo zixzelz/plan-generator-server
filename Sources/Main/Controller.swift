@@ -47,7 +47,7 @@ public class Controller {
         router.get("/api/apps/latest", handler: getLatestVersion)
         router.post("/api/apps", handler: addApplication)
         router.get("/api/storage/:objectId", handler: getObject)
-        
+
         Log.warning("⚠️ isDev: \(configMgr.isDev)")
     }
 
@@ -67,15 +67,20 @@ public class Controller {
     }
 
     public func getLatestVersion(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-        
-        guard let value = appController.getLatestVersion() else {
-            try? response.status(.notFound).send(json: JSON(["message": "Not found"])).end()
-            return
+
+        appController.getLatestVersion { (result) in
+
+            switch result {
+            case .success(let value):
+                response.status(.OK).send(json: JSON(["value": value]))
+                next()
+            case .failure(let error):
+                try? response.status(.notFound).send(json: JSON(["message": error.localizedDescription])).end()
+            }
+
         }
-        response.status(.OK).send(json: JSON(["value": value]))
-        next()
     }
-    
+
     public func getObject(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
 
         guard let objectId = request.parameters["objectId"] else {
