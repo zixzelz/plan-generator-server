@@ -135,14 +135,14 @@ class AppsController {
 
     func getLatestVersion(appId: String = "", completion: @escaping GetAppVersionControllerCompletionHandlet) {
 
-        getLatestAppVersion { (result) in
+        getLatestAppVersion() { (result) in
             
             guard case .success(let dict) = result, let id = dict["id"], let version = dict["version"] else {
                 completion(.failure(.getLatestVersion))
                 return
             }
 
-            let url = self.BuildManifest
+            let url = self.BuildManifest + "/" + id
             let res = ["version": version, "url": url]
             
             completion(.success(res))
@@ -250,7 +250,7 @@ class AppsController {
                 return
             }
 
-            db.retrieveAll(includeDocuments: true) { docs, error in
+            db.queryByView("latest_app", ofDesign: "main_design", usingParameters: [.limit(1), .descending(true)]) { docs, error in
                 guard let docs = docs else {
                     Log.error(">> Could not read from database or none exists.")
                     completion(.failure(.dbMgr))
@@ -259,9 +259,9 @@ class AppsController {
 
                 Log.info(">> Successfully retrived all docs from db.")
                 
-                let doc = docs["rows"].array?.first?["doc"]
-                let id = doc?["_id"].string!
-                let version = doc?["bundle-version"].string!
+                let doc = docs["rows"].array?.first
+                let id = doc?["id"].string!
+                let version = doc?["value"]["bundle_version"].string!
                 
                 let res = ["id": id!, "version": version!]
                 
@@ -272,7 +272,7 @@ class AppsController {
 
     public func addVersion(version: String, completion: @escaping StoreValueCH) {
 
-        let json: [String: Any] = [ "bundle-version": version]
+        let json: [String: Any] = [ "bundle_version": version, "timestamp": Date().timeIntervalSince1970]
 
         guard let dbMgr = self.dbMgr else {
             Log.error(">> No database manager.")
