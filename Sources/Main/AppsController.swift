@@ -64,15 +64,15 @@ typealias GetValueCH = (MainResult<[String: String], AppsControllerError>) -> Vo
 class AppsController {
 
     private let objstorage: ObjectStorage?
+    private var storageContainer: String
+
     private let dbName: String
     private let dbMgr: DatabaseManager?
     private let notificationManager: NotificationManager
 
-    private var storageContainer: String
-
     private var DefaultName = "build.ipa"
-    private var BuildManifest = "https://plangenerator.mybluemix.net/api/apps"
-    private var BuildUrl = "https://plangenerator.mybluemix.net/api/storage/build.ipa"
+    private var BuildManifest: String
+    private var BuildUrl: String
 
     init(configMgr: ConfigurationManager) {
 
@@ -85,7 +85,7 @@ class AppsController {
 
         storageContainer = configMgr.isDev ? "apps-dev" : "apps"
         BuildManifest = configMgr.url + "/api/apps"
-        BuildUrl = configMgr.url + "/api/storage/" + DefaultName
+        BuildUrl = configMgr.url + "/api/storage"
 
         objstorage = ObjectStorage(projectId: "07224055156344ee867c3f76ffd6248b")
         objstorage?.connect( userId: "bd3219d790b84a3a81e64def37cac42b",
@@ -120,15 +120,15 @@ class AppsController {
                 completion(result)
                 return
             }
-            
+
             self.notificationManager.send(type: .notify(version: version), completion: done)
         }.completed { (result) in
-            
+
             guard case .success() = result else {
                 completion(.failure(.sendNotification))
                 return
             }
-            
+
             completion(.success())
         }
     }
@@ -136,7 +136,7 @@ class AppsController {
     func getLatestVersion(appId: String = "", completion: @escaping GetAppVersionControllerCompletionHandlet) {
 
         getLatestAppVersion() { (result) in
-            
+
             guard case .success(let dict) = result, let id = dict["id"], let version = dict["version"] else {
                 completion(.failure(.getLatestVersion))
                 return
@@ -144,45 +144,58 @@ class AppsController {
 
             let url = self.BuildManifest + "/" + id
             let res = ["version": version, "url": url]
-            
+
             completion(.success(res))
         }
     }
 
     func manifest(appId: String, completion: @escaping GetAppControllerCompletionHandlet) {
 
-        guard let version = UserDefaults.standard.string(forKey: "bundle-version") else {
-            completion(.failure(.createManifest(nil)))
-            return
+        getApp(appId: appId) { (result) in
+
+            guard case .success(let dict) = result, let version = dict["version"] else {
+                completion(.failure(.createManifest(nil)))
+                return
+            }
+
+            let url = self.BuildUrl + "/" + appId
+
+            do {
+                let data = try self.createManifest(url: url, bundleId: "com.grsu.PlanGenerator", version: version, title: "PlanGenerator")
+                completion(.success(data))
+            }
+            catch {
+                completion(.failure(.createManifest(error)))
+            }
         }
+    }
+
+    private func createManifest(url: String, bundleId: String, version: String, title: String) throws -> Data {
 
         let asset = [
             "kind": "software-package",
-            "url": BuildUrl,
+            "url": url,
         ]
 
         let metadata = [
-            "bundle-identifier": "com.grsu.PlanGenerator",
+            "bundle-identifier": bundleId,
             "bundle-version": version,
             "kind": "software",
-            "title": "PlanGenerator",
+            "title": title,
         ]
         let items: [String: Any] = ["assets": [asset], "metadata": metadata]
         let dict: [String: Any] = ["items": [items]]
 
         let nsDict: AnyObject = NSDictionary(dictionary: dict)
 
-        do {
-            let data = try PropertyListSerialization.data(fromPropertyList: nsDict, format: PropertyListSerialization.PropertyListFormat.xml, options: 0)
-            completion(.success(data))
-        } catch {
-            completion(.failure(.createManifest(error)))
-        }
+        let data = try PropertyListSerialization.data(fromPropertyList: nsDict, format: PropertyListSerialization.PropertyListFormat.xml, options: 0)
+        return data
     }
 
+    // Think about redirect
     func app(appId: String, completion: @escaping GetAppControllerCompletionHandlet) {
 
-        objstorage?.retrieveContainer(name: "apps") { (error, container) in
+        objstorage?.retrieveContainer(name: storageContainer) { (error, container) in
 
             guard let container = container else {
                 Log.error("[AppsController] ❌ retrieveContainer error :: \(error)")
@@ -258,13 +271,47 @@ class AppsController {
                 }
 
                 Log.info(">> Successfully retrived all docs from db.")
-                
+
                 let doc = docs["rows"].array?.first
                 let id = doc?["id"].string!
                 let version = doc?["value"]["bundle_version"].string!
-                
+
                 let res = ["id": id!, "version": version!]
-                
+
+                completion(.success(res))
+            }
+        }
+    }
+
+    public func getApp(appId: String, completion: @escaping GetValueCH) {
+
+        guard let dbMgr = self.dbMgr else {
+            Log.error(">> No database manager.")
+            completion(.failure(.dbMgr))
+            return
+        }
+
+        dbMgr.getDatabase() { (db: Database?, error: NSError?) in
+            guard let db = db else {
+                Log.error(">> No database.")
+                completion(.failure(.noDatabase))
+                return
+            }
+
+            db.retrieve(appId) { docs, error in
+                guard let doc = docs else {
+                    Log.error(">> Could not read from database or none exists.")
+                    completion(.failure(.dbMgr))
+                    return
+                }
+
+                Log.info(">> Successfully retrived app from db.")
+
+                let id = doc["_id"].string!
+                let version = doc["bundle_version"].string!
+
+                let res = ["id": id, "version": version]
+
                 completion(.success(res))
             }
         }
@@ -303,5 +350,5 @@ class AppsController {
             })
         }
     }
-    
+
 }

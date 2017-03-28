@@ -42,9 +42,9 @@ public class Controller {
         // All web apps need a Router instance to define routes
         router = Router()
         router.all("/", middleware: StaticFileServer())
+        router.get("/api/latest-app", handler: getLatestVersion)
         router.all("/api/apps", middleware: BodyParser())
-        router.get("/api/apps", handler: getApplication)
-        router.get("/api/apps/latest", handler: getLatestVersion)
+        router.get("/api/apps/:appId", handler: getApplication)
         router.post("/api/apps", handler: addApplication)
         router.get("/api/storage/:objectId", handler: getObject)
 
@@ -53,7 +53,12 @@ public class Controller {
 
     public func getApplication(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
 
-        appController.manifest(appId: "") { (result) in
+        guard let appId = request.parameters["appId"] else {
+            try? response.status(.badRequest).send(json: JSON(["message": "No app ID"])).end()
+            return
+        }
+
+        appController.manifest(appId: appId) { (result) in
 
             switch result {
             case .success(let data):
