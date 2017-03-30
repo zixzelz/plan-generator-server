@@ -102,33 +102,20 @@ class AppsController {
     }
 
     func add(app: Data, version: String, completion: @escaping AppsControllerCompletionHandlet) {
-//        let filePath = TemporaryFileCacheManager().saveFile(name: "temp.pdf", data: app)
 
         Make.next { (done) in
-            self.addVersion(version: version, completion: done)
-        }.next { (result, done: @escaping AppsControllerCompletionHandlet) in
-
-            guard case .success(let id) = result else {
-                completion(.failure(.setNewVersion))
-                return
-            }
-
+            self.addAppVersion(version: version, completion: done)
+        }.handleError { _ in
+            completion(.failure(.setNewVersion))
+        }.next { (id, done: @escaping AppsControllerCompletionHandlet) in
             self.storeApp(app, name: id, completion: done)
+        }.handleError { error in
+            completion(.failure(error))
         }.next { (result, done: @escaping NotificationManagerCompletionHandlet) in
-
-            guard case .success() = result else {
-                completion(result)
-                return
-            }
-
             self.notificationManager.send(type: .notify(version: version), completion: done)
+        }.handleError { error in
+            completion(.failure(.sendNotification))
         }.completed { (result) in
-
-            guard case .success() = result else {
-                completion(.failure(.sendNotification))
-                return
-            }
-
             completion(.success())
         }
     }
@@ -317,7 +304,7 @@ class AppsController {
         }
     }
 
-    public func addVersion(version: String, completion: @escaping StoreValueCH) {
+    public func addAppVersion(version: String, completion: @escaping StoreValueCH) {
 
         let json: [String: Any] = [ "bundle_version": version, "timestamp": Date().timeIntervalSince1970]
 

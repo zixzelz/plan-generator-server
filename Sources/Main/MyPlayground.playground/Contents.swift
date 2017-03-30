@@ -162,3 +162,15 @@ print("Finish")
 //
 
 
+let inch = 5
+
+switch inch {
+case 0 ... 5: print("1")
+case 5 ... 8: print("2")
+case 8 ... 11: print("3")
+default: print("mis")
+}
+
+let v: String? = nil
+
+let b = NSString(format: "%@", v)
