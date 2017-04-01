@@ -10,6 +10,7 @@
 		4440B88D1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */; };
 		44A1FAD31E88188000D319F9 /* Make.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A1FAD21E88188000D319F9 /* Make.swift */; };
 		44D3D5651E8DB9AF009FD2CE /* Make+ErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44D3D5641E8DB9AF009FD2CE /* Make+ErrorHandling.swift */; };
+		44E1DBC91E90402E0091450B /* AppsDatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44E1DBC81E90402E0091450B /* AppsDatabaseManager.swift */; };
 		OBJ_210 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Logger.swift */; };
 		OBJ_217 /* HeliumLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* HeliumLogger.swift */; };
 		OBJ_218 /* HeliumStreamLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* HeliumStreamLogger.swift */; };
@@ -974,6 +975,7 @@
 		4440B88C1E7EA75500F1EF64 /* ConfigurationManagerExpanded.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerExpanded.swift; sourceTree = "<group>"; };
 		44A1FAD21E88188000D319F9 /* Make.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Make.swift; sourceTree = "<group>"; };
 		44D3D5641E8DB9AF009FD2CE /* Make+ErrorHandling.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Make+ErrorHandling.swift"; sourceTree = "<group>"; };
+		44E1DBC81E90402E0091450B /* AppsDatabaseManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppsDatabaseManager.swift; sourceTree = "<group>"; };
 		OBJ_100 /* JSONBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_101 /* MultiPartBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPartBodyParser.swift; sourceTree = "<group>"; };
 		OBJ_102 /* ParsedBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedBody.swift; sourceTree = "<group>"; };
@@ -1587,6 +1589,7 @@
 				OBJ_171 /* Buddy.swift */,
 				OBJ_172 /* Controller.swift */,
 				OBJ_173 /* DatabaseManager.swift */,
+				44E1DBC81E90402E0091450B /* AppsDatabaseManager.swift */,
 				OBJ_174 /* main.swift */,
 				OBJ_175 /* NotificationManager.swift */,
 				OBJ_176 /* Result.swift */,
@@ -2664,6 +2667,7 @@
 				OBJ_588 /* AppsController.swift in Sources */,
 				OBJ_589 /* Buddy.swift in Sources */,
 				OBJ_590 /* Controller.swift in Sources */,
+				44E1DBC91E90402E0091450B /* AppsDatabaseManager.swift in Sources */,
 				44D3D5651E8DB9AF009FD2CE /* Make+ErrorHandling.swift in Sources */,
 				OBJ_591 /* DatabaseManager.swift in Sources */,
 				44A1FAD31E88188000D319F9 /* Make.swift in Sources */,
