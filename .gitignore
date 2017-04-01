@@ -3,3 +3,10 @@ Packages/*
 kitura-helloworld.xcodeproj/*
 *.DS_Store
 Sources/config.json
+
+# xcode
+xcuserdata
+*.xcuserstate
+
+# Builds
+.bundle_identifier
